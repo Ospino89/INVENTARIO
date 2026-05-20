@@ -7,3 +7,6 @@ class CustomUserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ['id', 'username', 'email', 'role']
         read_only_fields = ['id']
+
+
+

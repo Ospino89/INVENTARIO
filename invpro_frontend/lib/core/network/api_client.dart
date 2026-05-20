@@ -1,8 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:convert';
 
 class ApiClient {
-  static const String baseUrl = 'http://127.0.0.1:8000/api/v1';
+  static const String baseUrl = 'http://192.168.20.8:8000/api/v1';
   static const _storage = FlutterSecureStorage();
 
   late final Dio dio;
@@ -58,4 +59,19 @@ class ApiClient {
       return false;
     }
   }
+
+
+  
+  static Future<Map<String, dynamic>> getUserFromToken() async {
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'access_token');
+    if (token == null) return {};
+    final parts = token.split('.');
+    final payload = parts[1];
+    final normalized = base64Url.normalize(payload);
+    final decoded = utf8.decode(base64Url.decode(normalized));
+    return jsonDecode(decoded);
+  }
+  
 }
+

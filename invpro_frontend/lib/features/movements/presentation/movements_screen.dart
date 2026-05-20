@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,7 +6,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../data/movements_service.dart';
 import '../../inventory/presentation/inventory_screen.dart';
 import '../../../core/network/api_client.dart';
-import 'dart:convert';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/sidebar.dart';
 
 final movementsServiceProvider = Provider(
   (ref) => MovementsService(ApiClient()),
@@ -23,63 +25,279 @@ class MovementsScreen extends ConsumerWidget {
     final movimientosAsync = ref.watch(movimientosProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Movimientos'),
-        backgroundColor: Colors.indigo,
-        foregroundColor: Colors.white,
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _mostrarFormulario(context, ref),
-        child: const Icon(Icons.add),
-      ),
-      body: movimientosAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
-        data: (movimientos) => movimientos.isEmpty
-            ? const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.swap_horiz, size: 64, color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text(
-                      'No hay movimientos registrados',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ],
-                ),
-              )
-            : RefreshIndicator(
-                onRefresh: () async => ref.refresh(movimientosProvider),
-                child: ListView.builder(
-                  itemCount: movimientos.length,
-                  itemBuilder: (context, index) {
-                    final m = movimientos[index];
-                    final esEntrada = m['tipo'] == 'ENTRADA';
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: esEntrada ? Colors.green : Colors.red,
-                        child: Icon(
-                          esEntrada ? Icons.arrow_downward : Icons.arrow_upward,
-                          color: Colors.white,
-                        ),
-                      ),
-                      title: Text(m['producto_nombre']),
-                      subtitle: Text(
-                        'Por: ${m['autor_username']} · ${m['creado_en'].toString().substring(0, 10)}',
-                      ),
-                      trailing: Text(
-                        '${esEntrada ? '+' : '-'}${m['cantidad']}',
+      backgroundColor: AppTheme.bgPrimary,
+      body: Row(
+        children: [
+          const AppSidebar(selectedIndex: 1),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
+                  color: AppTheme.bgPrimary,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Movimientos',
                         style: TextStyle(
                           fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: esEntrada ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.textPrimary,
                         ),
                       ),
-                    );
-                  },
+                      ElevatedButton.icon(
+                        onPressed: () => _mostrarFormulario(context, ref),
+                        icon: const Icon(Icons.add, size: 16),
+                        label: const Text('Registrar movimiento'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.accent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+                Expanded(
+                  child: movimientosAsync.when(
+                    loading: () => const Center(
+                      child: CircularProgressIndicator(color: AppTheme.accent),
+                    ),
+                    error: (e, _) => Center(
+                      child: Text(
+                        'Error: $e',
+                        style: const TextStyle(color: AppTheme.textSecondary),
+                      ),
+                    ),
+                    data: (movimientos) => movimientos.isEmpty
+                        ? const Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.swap_horiz,
+                                  size: 64,
+                                  color: AppTheme.textHint,
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  'No hay movimientos registrados',
+                                  style: TextStyle(color: AppTheme.textMuted),
+                                ),
+                              ],
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: () async =>
+                                ref.refresh(movimientosProvider),
+                            color: AppTheme.accent,
+                            child: Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: AppTheme.bgCard,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: AppTheme.borderColor,
+                                    width: 0.5,
+                                  ),
+                                ),
+                                child: Column(
+                                  children: [
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 12,
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            flex: 1,
+                                            child: Text(
+                                              'Tipo',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: AppTheme.textHint,
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 3,
+                                            child: Text(
+                                              'Producto',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: AppTheme.textHint,
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 2,
+                                            child: Text(
+                                              'Autor',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: AppTheme.textHint,
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 2,
+                                            child: Text(
+                                              'Fecha',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: AppTheme.textHint,
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Text(
+                                              'Cantidad',
+                                              textAlign: TextAlign.right,
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: AppTheme.textHint,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Divider(
+                                      color: AppTheme.borderColor,
+                                      height: 0.5,
+                                      thickness: 0.5,
+                                    ),
+                                    Expanded(
+                                      child: ListView.separated(
+                                        itemCount: movimientos.length,
+                                        separatorBuilder: (context, index) =>
+                                            const Divider(
+                                              color: AppTheme.bgCardDeep,
+                                              height: 0.5,
+                                              thickness: 0.5,
+                                            ),
+                                        itemBuilder: (context, index) {
+                                          final m = movimientos[index];
+                                          final esEntrada =
+                                              m['tipo'] == 'ENTRADA';
+                                          return Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 12,
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Expanded(
+                                                  flex: 1,
+                                                  child: Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 3,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: esEntrada
+                                                          ? AppTheme.successBg
+                                                          : AppTheme.dangerBg,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            10,
+                                                          ),
+                                                    ),
+                                                    child: Text(
+                                                      esEntrada
+                                                          ? 'Entrada'
+                                                          : 'Salida',
+                                                      style: TextStyle(
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: esEntrada
+                                                            ? AppTheme.success
+                                                            : AppTheme.danger,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  flex: 3,
+                                                  child: Text(
+                                                    m['producto_nombre'],
+                                                    style: const TextStyle(
+                                                      fontSize: 13,
+                                                      color:
+                                                          AppTheme.textPrimary,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  flex: 2,
+                                                  child: Text(
+                                                    m['autor_username'],
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: AppTheme.textMuted,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  flex: 2,
+                                                  child: Text(
+                                                    m['creado_en']
+                                                        .toString()
+                                                        .substring(0, 10),
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: AppTheme.textHint,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  flex: 1,
+                                                  child: Text(
+                                                    '${esEntrada ? '+' : '-'}${m['cantidad']}',
+                                                    textAlign: TextAlign.right,
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color: esEntrada
+                                                          ? AppTheme.success
+                                                          : AppTheme.danger,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -93,12 +311,16 @@ class MovementsScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: AppTheme.bgCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (context) => Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
-          left: 16,
-          right: 16,
-          top: 16,
+          left: 20,
+          right: 20,
+          top: 20,
         ),
         child: Consumer(
           builder: (context, ref, _) {
@@ -109,21 +331,20 @@ class MovementsScreen extends ConsumerWidget {
               data: (productos) => StatefulBuilder(
                 builder: (context, setState) => Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Registrar Movimiento',
+                      'Registrar movimiento',
                       style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        labelText: 'Tipo',
-                        border: OutlineInputBorder(),
-                      ),
-                      initialValue: tipoSeleccionado,
+                    const SizedBox(height: 16),
+                    _DarkDropdown<String>(
+                      label: 'Tipo',
+                      value: tipoSeleccionado,
                       items: const [
                         DropdownMenuItem(
                           value: 'ENTRADA',
@@ -136,13 +357,10 @@ class MovementsScreen extends ConsumerWidget {
                       ],
                       onChanged: (v) => setState(() => tipoSeleccionado = v!),
                     ),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<int>(
-                      decoration: const InputDecoration(
-                        labelText: 'Producto',
-                        border: OutlineInputBorder(),
-                      ),
-                      initialValue: productoSeleccionado,
+                    const SizedBox(height: 10),
+                    _DarkDropdown<int>(
+                      label: 'Producto',
+                      value: productoSeleccionado,
                       items: productos
                           .map<DropdownMenuItem<int>>(
                             (p) => DropdownMenuItem(
@@ -154,22 +372,16 @@ class MovementsScreen extends ConsumerWidget {
                       onChanged: (v) =>
                           setState(() => productoSeleccionado = v),
                     ),
-                    const SizedBox(height: 8),
-                    TextField(
+                    const SizedBox(height: 10),
+                    _DarkTextField(
                       controller: cantidadController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Cantidad',
-                        border: OutlineInputBorder(),
-                      ),
+                      label: 'Cantidad',
+                      isNumber: true,
                     ),
-                    const SizedBox(height: 8),
-                    TextField(
+                    const SizedBox(height: 10),
+                    _DarkTextField(
                       controller: notasController,
-                      decoration: const InputDecoration(
-                        labelText: 'Notas (opcional)',
-                        border: OutlineInputBorder(),
-                      ),
+                      label: 'Notas (opcional)',
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
@@ -181,7 +393,6 @@ class MovementsScreen extends ConsumerWidget {
                             cantidadController.text,
                           );
                           if (cantidad == null || cantidad <= 0) return;
-
                           try {
                             const storage = FlutterSecureStorage();
                             final token = await storage.read(
@@ -195,7 +406,6 @@ class MovementsScreen extends ConsumerWidget {
                             );
                             final map = jsonDecode(decoded);
                             final autorId = map['user_id'].toString();
-
                             await ref
                                 .read(movementsServiceProvider)
                                 .registrarMovimiento(
@@ -217,16 +427,24 @@ class MovementsScreen extends ConsumerWidget {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(mensaje),
-                                  backgroundColor: Colors.red,
+                                  backgroundColor: AppTheme.danger,
                                 ),
                               );
                             }
                           }
                         },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.accent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
                         child: const Text('Registrar'),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -234,6 +452,84 @@ class MovementsScreen extends ConsumerWidget {
           },
         ),
       ),
+    );
+  }
+}
+
+class _DarkTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final bool isNumber;
+
+  const _DarkTextField({
+    required this.controller,
+    required this.label,
+    this.isNumber = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+      style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
+        filled: true,
+        fillColor: AppTheme.bgCardDeep,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: AppTheme.borderColor, width: 0.5),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: AppTheme.borderColor, width: 0.5),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: AppTheme.accent, width: 1),
+        ),
+      ),
+    );
+  }
+}
+
+class _DarkDropdown<T> extends StatelessWidget {
+  final String label;
+  final T? value;
+  final List<DropdownMenuItem<T>> items;
+  final void Function(T?) onChanged;
+
+  const _DarkDropdown({
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<T>(
+      dropdownColor: AppTheme.bgCard,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
+        filled: true,
+        fillColor: AppTheme.bgCardDeep,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: AppTheme.borderColor, width: 0.5),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: AppTheme.borderColor, width: 0.5),
+        ),
+      ),
+      style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
+      initialValue: value,
+      items: items,
+      onChanged: onChanged,
     );
   }
 }

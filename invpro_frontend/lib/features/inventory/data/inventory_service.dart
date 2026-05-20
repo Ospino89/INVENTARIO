@@ -44,4 +44,29 @@ class InventoryService {
       options: await _authOptions(),
     );
   }
+
+
+  Future<void> crearProductoConImagen(
+    Map<String, dynamic> data,
+    String? imagePath,
+  ) async {
+    final token = await _storage.read(key: 'access_token');
+
+    final formData = FormData.fromMap({
+      'sku': data['sku'],
+      'nombre': data['nombre'],
+      'descripcion': data['descripcion'],
+      'stock_actual': data['stock_actual'],
+      'stock_minimo': data['stock_minimo'],
+      'categoria': data['categoria'],
+      'activo': data['activo'],
+      if (imagePath != null) 'imagen': await MultipartFile.fromFile(imagePath),
+    });
+
+    await _apiClient.dio.post(
+      '/productos/',
+      data: formData,
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+  }
 }

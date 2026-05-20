@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/network/api_client.dart';
+import 'core/theme/app_theme.dart';
 import 'features/auth/data/auth_service.dart';
 import 'features/auth/presentation/login_screen.dart';
-import 'core/network/api_client.dart';
 import 'features/dashboard/presentation/dashboard_screen.dart';
 
 void main() {
@@ -17,10 +18,7 @@ class InvProApp extends StatelessWidget {
     return MaterialApp(
       title: 'InvPro',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.theme,
       home: const AuthGate(),
     );
   }
@@ -52,21 +50,29 @@ class _AuthGateState extends State<AuthGate> {
     });
   }
 
+  void _onLogin() {
+    setState(() => _isAuthenticated = true);
+  }
+
+  void _onLogout() {
+    setState(() => _isAuthenticated = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        backgroundColor: Color(0xFF0F1729),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF4F6EF7)),
+        ),
+      );
     }
 
     if (_isAuthenticated) {
-      return const DashboardScreen();
+      return DashboardScreen(onLogout: _onLogout);
     }
 
-    return LoginScreen(
-      onLoginSuccess: () {
-        setState(() => _isAuthenticated = true);
-      },
-    );
+    return LoginScreen(onLoginSuccess: _onLogin);
   }
 }
-

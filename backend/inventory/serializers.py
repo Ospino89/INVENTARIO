@@ -20,10 +20,15 @@ class ProductoSerializer(serializers.ModelSerializer):
             'id', 'sku', 'nombre', 'descripcion',
             'stock_actual', 'stock_minimo',
             'categoria', 'categoria_nombre',
-            'activo', 'creado_en', 'actualizado_en'
+            'imagen', 'activo', 'creado_en', 'actualizado_en'
         ]
         read_only_fields = ['id', 'creado_en', 'actualizado_en']
 
+
+class GraficaHoraSerializer(serializers.Serializer):
+    hora = serializers.IntegerField()
+    entradas = serializers.IntegerField()
+    salidas = serializers.IntegerField()
 
 
 
@@ -32,4 +37,8 @@ class DashboardSerializer(serializers.Serializer):
     productos_bajo_minimo = serializers.IntegerField(read_only=True)
     total_entradas_hoy = serializers.IntegerField(read_only=True)
     total_salidas_hoy = serializers.IntegerField(read_only=True)
+    grafica = GraficaHoraSerializer(many=True, read_only=True)
+
+
+
     

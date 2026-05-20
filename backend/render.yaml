@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: invpro-backend
+    runtime: python
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
+    startCommand: gunicorn config.wsgi:application
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: False
+      - key: DATABASE_URL
+        value: postgresql://neondb_owner:npg_uNZW1rT5bsmi@ep-restless-violet-apkn4203-pooler.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+      - key: CORS_ALLOW_ALL_ORIGINS
+        value: True

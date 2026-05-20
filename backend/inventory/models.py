@@ -26,14 +26,11 @@ class Producto(models.Model):
         on_delete=models.PROTECT,
         related_name='productos'
     )
+    imagen = models.ImageField(
+        upload_to='productos/',
+        blank=True,
+        null=True
+    )
     activo = models.BooleanField(default=True)
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name = 'Producto'
-        verbose_name_plural = 'Productos'
-        ordering = ['nombre']
-
-    def __str__(self):
-        return f"{self.sku} - {self.nombre}"
